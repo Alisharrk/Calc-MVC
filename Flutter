@@ -1,0 +1,123 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyCalculatorApp());
+
+// ===== MODEL =====
+class CalculatorModel {
+  double? firstNumber;
+  double? secondNumber;
+  String? operator;
+
+  String calculate() {
+    if (firstNumber == null || secondNumber == null || operator == null) {
+      return 'Ошибка';
+    }
+
+    switch (operator) {
+      case '+':
+        return (firstNumber! + secondNumber!).toString();
+      case '-':
+        return (firstNumber! - secondNumber!).toString();
+      case '*':
+        return (firstNumber! * secondNumber!).toString();
+      case '/':
+        return secondNumber == 0 ? 'Ошибка' : (firstNumber! / secondNumber!).toString();
+      default:
+        return 'Ошибка';
+    }
+  }
+
+  void clear() {
+    firstNumber = null;
+    secondNumber = null;
+    operator = null;
+  }
+}
+
+// ===== CONTROLLER =====
+class CalculatorController {
+  final CalculatorModel model = CalculatorModel();
+  String display = '';
+
+  void input(String value) {
+    if ('+-*/'.contains(value)) {
+      model.firstNumber = double.tryParse(display);
+      model.operator = value;
+      display = '';
+    } else if (value == '=') {
+      model.secondNumber = double.tryParse(display);
+      display = model.calculate();
+    } else if (value == 'C') {
+      model.clear();
+      display = '';
+    } else {
+      display += value;
+    }
+  }
+}
+
+// ===== VIEW =====
+class MyCalculatorApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Калькулятор',
+      home: CalculatorPage(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class CalculatorPage extends StatefulWidget {
+  @override
+  _CalculatorPageState createState() => _CalculatorPageState();
+}
+
+class _CalculatorPageState extends State<CalculatorPage> {
+  final CalculatorController controller = CalculatorController();
+
+  void onPressed(String value) {
+    setState(() {
+      controller.input(value);
+    });
+  }
+
+  Widget buildButton(String text) {
+    return ElevatedButton(
+      onPressed: () => onPressed(text),
+      child: Text(text, style: TextStyle(fontSize: 24)),
+    );
+  }
+
+  Widget buildButtonRow(List<String> buttons) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: buttons.map(buildButton).toList(),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Калькулятор')),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(20),
+            child: Text(
+              controller.display,
+              style: TextStyle(fontSize: 32),
+              textAlign: TextAlign.right,
+            ),
+          ),
+          buildButtonRow(['7', '8', '9', '/']),
+          buildButtonRow(['4', '5', '6', '*']),
+          buildButtonRow(['1', '2', '3', '-']),
+          buildButtonRow(['0', '.', '=', '+']),
+          buildButtonRow(['C']),
+        ],
+      ),
+    );
+  }
+}
