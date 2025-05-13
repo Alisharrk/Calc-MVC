@@ -2,61 +2,6 @@ import 'package:flutter/material.dart';
 
 void main() => runApp(MyCalculatorApp());
 
-// ===== MODEL =====
-class CalculatorModel {
-  double? firstNumber;
-  double? secondNumber;
-  String? operator;
-
-  String calculate() {
-    if (firstNumber == null || secondNumber == null || operator == null) {
-      return 'Ошибка';
-    }
-
-    switch (operator) {
-      case '+':
-        return (firstNumber! + secondNumber!).toString();
-      case '-':
-        return (firstNumber! - secondNumber!).toString();
-      case '*':
-        return (firstNumber! * secondNumber!).toString();
-      case '/':
-        return secondNumber == 0 ? 'Ошибка' : (firstNumber! / secondNumber!).toString();
-      default:
-        return 'Ошибка';
-    }
-  }
-
-  void clear() {
-    firstNumber = null;
-    secondNumber = null;
-    operator = null;
-  }
-}
-
-// ===== CONTROLLER =====
-class CalculatorController {
-  final CalculatorModel model = CalculatorModel();
-  String display = '';
-
-  void input(String value) {
-    if ('+-*/'.contains(value)) {
-      model.firstNumber = double.tryParse(display);
-      model.operator = value;
-      display = '';
-    } else if (value == '=') {
-      model.secondNumber = double.tryParse(display);
-      display = model.calculate();
-    } else if (value == 'C') {
-      model.clear();
-      display = '';
-    } else {
-      display += value;
-    }
-  }
-}
-
-// ===== VIEW =====
 class MyCalculatorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -68,33 +13,49 @@ class MyCalculatorApp extends StatelessWidget {
   }
 }
 
+// ===== MODEL + CONTROLLER =====
+class CalculatorLogic {
+  String input = '';
+  String result = '';
+
+  void addInput(String value) {
+    input += value;
+  }
+
+  void clear() {
+    input = '';
+    result = '';
+  }
+
+  void calculate() {
+    try {
+      if (input.contains('+')) {
+        var parts = input.split('+');
+        result = (double.parse(parts[0]) + double.parse(parts[1])).toString();
+      } else if (input.contains('-')) {
+        var parts = input.split('-');
+        result = (double.parse(parts[0]) - double.parse(parts[1])).toString();
+      } else if (input.contains('*')) {
+        var parts = input.split('*');
+        result = (double.parse(parts[0]) * double.parse(parts[1])).toString();
+      } else if (input.contains('/')) {
+        var parts = input.split('/');
+        result = (double.parse(parts[0]) / double.parse(parts[1])).toString();
+      }
+    } catch (e) {
+      result = 'Ошибка';
+    }
+  }
+}
+
+// ===== VIEW =====
 class CalculatorPage extends StatefulWidget {
   @override
   _CalculatorPageState createState() => _CalculatorPageState();
 }
 
 class _CalculatorPageState extends State<CalculatorPage> {
-  final CalculatorController controller = CalculatorController();
-
-  void onPressed(String value) {
-    setState(() {
-      controller.input(value);
-    });
-  }
-
-  Widget buildButton(String text) {
-    return ElevatedButton(
-      onPressed: () => onPressed(text),
-      child: Text(text, style: TextStyle(fontSize: 24)),
-    );
-  }
-
-  Widget buildButtonRow(List<String> buttons) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: buttons.map(buildButton).toList(),
-    );
-  }
+  final logic = CalculatorLogic();
 
   @override
   Widget build(BuildContext context) {
@@ -104,11 +65,12 @@ class _CalculatorPageState extends State<CalculatorPage> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Padding(
-            padding: EdgeInsets.all(20),
-            child: Text(
-              controller.display,
-              style: TextStyle(fontSize: 32),
-              textAlign: TextAlign.right,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Text(logic.input, style: TextStyle(fontSize: 28)),
+                Text(logic.result, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              ],
             ),
           ),
           buildButtonRow(['7', '8', '9', '/']),
@@ -117,6 +79,33 @@ class _CalculatorPageState extends State<CalculatorPage> {
           buildButtonRow(['0', '.', '=', '+']),
           buildButtonRow(['C']),
         ],
+      ),
+    );
+  }
+
+  Widget buildButtonRow(List<String> buttons) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: buttons.map((text) => buildButton(text)).toList(),
+    );
+  }
+
+  Widget buildButton(String text) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ElevatedButton(
+        onPressed: () {
+          setState(() {
+            if (text == '=') {
+              logic.calculate();
+            } else if (text == 'C') {
+              logic.clear();
+            } else {
+              logic.addInput(text);
+            }
+          });
+        },
+        child: Text(text, style: TextStyle(fontSize: 24)),
       ),
     );
   }
